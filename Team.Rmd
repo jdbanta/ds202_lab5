@@ -62,10 +62,37 @@ This indicates that the dimensions of the new diabetes_clean dataset has 366 row
 ### Exploring and transforming data
 
 #### 6
+```{r}
+library(ggplot2)
+ggplot(data = diabetes_clean ,aes(x = glyhb))+ geom_histogram(binwidth = .25) + 
+          ggtitle("Histogram of Glycosolated Hemoglobin, Showing Right Skewness") +
+          xlab("Glycosolated Hemoglobin")
+```
+
+The log of `glyhb` fixes the right skewness  by spreading out the clusters of values on the low value end of the histogram, but at the downfall that the histogram is less intuitive to read. Conclusions made about the transformed data can't be directly applied to the original data, so it is necessary to be mindful of this distinction. 
+
 
 #### 7
+```{r}
+library(dplyr)
+
+mutate(diabetes_clean, glyhb_star = log(glyhb))
+
+ggplot(data = diabetes_clean, aes(x = glyhb_star))+ geom_histogram(binwidth = .25)+ 
+          ggtitle("Histogram of Lof of Glycosolated Hemoglobin, Adjusted to Correct Skewness") +
+          xlab("Log of Glycosolated Hemoglobin")
+```
+
+The histogram of `glyhb_star` is approximately symmetric.
 
 #### 8
+
+diabetes_clean %>% group_by(frame) %>% summarise(mean.glyhb = mean(glyhb_star))
+
+diabetes_clean %>% group_by(location) %>% summarise(mean.glyhb = mean(glyhb_star))
+
+diabetes_clean %>% group_by(age) %>% summarise(mean.glyhb = mean(glyhb_star))
+
 
 ### Visualizations
 
