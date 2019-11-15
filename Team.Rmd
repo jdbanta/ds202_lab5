@@ -76,37 +76,84 @@ The log of `glyhb` fixes the right skewness  by spreading out the clusters of va
 ```{r}
 library(dplyr)
 
-mutate(diabetes_clean, glyhb_star = log(glyhb))
+diabetes_clean = mutate(diabetes_clean, glyhb_star = log(glyhb))
 
 ggplot(data = diabetes_clean, aes(x = glyhb_star))+ geom_histogram(binwidth = .25)+ 
           ggtitle("Histogram of Lof of Glycosolated Hemoglobin, Adjusted to Correct Skewness") +
           xlab("Log of Glycosolated Hemoglobin")
 ```
 
-The histogram of `glyhb_star` is approximately symmetric.
+The histogram of `glyhb_star` is much closer to being symmetric.
 
 #### 8
-
+```{r}
 diabetes_clean %>% group_by(frame) %>% summarise(mean.glyhb = mean(glyhb_star))
 
 diabetes_clean %>% group_by(location) %>% summarise(mean.glyhb = mean(glyhb_star))
 
-diabetes_clean %>% group_by(age) %>% summarise(mean.glyhb = mean(glyhb_star))
+diabetes_clean %>% group_by(age) %>% summarise(mean.glyhb = mean(glyhb_star)) 
+
+diabetes_clean %>% group_by(gender) %>% summarise(mean.glyhb = mean(glyhb_star)) 
+```
+
+The mean log of glyhb is highest for large frame and decreases as frame size does. The mean log of glyhb is slighlty higher in Buckingham than Louisa. Age seems to have some correlation with mean log of glyhb, with most of the highest values seen with higher ages. The highest mean log of glyhb is seen at age 85, and the lowest is seen at age 32. The mean log of glyhb is slightly higher for males than for females. These data suggest that an older man from Buckingham with a large frame would have the highest log of glyhb on average.
 
 
 ### Visualizations
 
 #### 10
+```{r}
+diabetes_clean$frame <- ordered(diabetes_clean$frame, levels = c("small", "medium", "large"))
+
+diabetes_clean %>% group_by(frame,location) %>% summarise (mean.glyhb_star= mean(glyhb_star)) %>%
+    ggplot( aes(x = frame, y = mean.glyhb_star, color=location)) +
+    geom_point() +
+    ggtitle("Scatterplot of Mean Log of Glycosolated Hemoglobin by Frame Size, Colored by Location") +
+          ylab("Mean Log of Glycosolated Hemoglobin") +
+          xlab("Frame Size")
+```
 
 #### 11
+```{r}
+fit = lm(glyhb_star~ratio+bp.1s+age+gender+hip+weight,data=diabetes_clean)
+summary(fit)
+```
+
 
 #### 12
+```{r}
+library(hexbin)
+
+ggplot(data = diabetes_clean, aes(x=waist, y=hip)) + geom_hex() + 
+    facet_wrap(~frame) + 
+    scale_fill_continuous(high = "#132B43", low = "#56B1F7") +
+    ggtitle("Waist and Hip Patterns, Faceted by Frame Size")
+
+```
+
+Using `geom_hex` is one option to intuitively display the density of points where overplotting occurs.
+
+```{r}
+ggplot(diabetes_clean,aes(y=hip,x=waist)) + geom_point(shape = ".") + facet_wrap(~frame) +
+        geom_smooth(method=lm) +
+        ggtitle("Waist vs Hip Scatter Plot, Faceted by Frame Size")
+```
+
+Another way to circumvent the loss of information due to overplotting is to make the points very small, so they can be visible when very close to other points. I have also added a linear trend line to the data to make the distict pattern more clear.
+
 
 ### Messy data
 
 #### 13
 
+`spread` takes pairs of keys and values that are contained in different columns and arranges them in a way that can be more useful, dependending on the data. One column of keys will become the new column headers, while the value paired with the key will be listed beneath it, without dropping any other variables tied to the values.
+
+`gather` does the opposite of `spread`. It takes column names and gathers them into a single key column and collects the values below the column name and puts them into a value column. 
+
+
 #### 14
+
+Yes, `spread` and `gather` are exact complements of each other. You can use `spread` to exactly undo `gather` and vice versa. This is because the key/value pairs are always maintained between the two. The order of the columns may be altered though, depending on the structure of the original data frame.
 
 ### Regression models
 
@@ -149,3 +196,5 @@ Linear regression will be only impacted by the inputs that go into the equation,
 ### Reflection
 
 #### 20
+
+  Our original idea of data science, which is similar to the Hal Varian quote in the beginning of lecture 1, was the ability to extract and communicate meaning from data. This course has given us practice at doing so using R, and our views have not changed. What was most surprising about data science is the collaborative community that is available for help on the internet. It is remarkable how much you can learn from Googling questions and errors. It seems possible to learn anything you are trying to accomplish by simply searching for it. What was most challenging was exploring data and knowing what sort of things to look for. Large datasets seem like a daunting spread of meaningless numbers until you get deeper into exploration. What was most enjoyable was creating good-looking and meaningful visuals from those originally daunting datasets. 
